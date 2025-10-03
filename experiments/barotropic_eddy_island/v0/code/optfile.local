@@ -1,0 +1,88 @@
+#!/bin/bash
+# Minimal, clean optfile for macOS arm64 + Homebrew gfortran.
+# Purpose: build MITgcm WITHOUT NetCDF/MNC and WITHOUT auto-detecting NetCDF.
+# Works for serial (MPI=false) or MPI builds (MPI=true) but never injects
+# netcdf/netcdff. Keep this file under v0/code and pass it with: genmake2 -of ../code/optfile.local
+
+if test "x$MPI" = xtrue ; then
+  CC=mpicc
+  FC=mpif77
+  F90C=mpif90
+  LINK=$F90C
+else
+  CC=gcc
+  FC=gfortran
+  F90C=gfortran
+  LINK=$F90C
+fi
+
+FC_NAMEMANGLE="#define FC_NAMEMANGLE(X) X ## _"
+S64='$(TOOLSDIR)/set64bitConst.sh'
+DEFINES='-DWORDLENGTH=4 -DNML_TERMINATOR'
+CPP='/usr/bin/cpp -traditional -P'
+GET_FC_VERSION="--version"
+EXTENDED_SRC_FLAG='-ffixed-line-length-132'
+OMPFLAG='-fopenmp'
+
+NOOPTFLAGS='-O0'
+NOOPTFILES=''
+
+# Endianness expected by MITgcm I/O
+FFLAGS="$FFLAGS -fconvert=big-endian"
+
+# Allow gfortran>=10 argument mismatch (needed by some legacy Fortran)
+fcVers=`$FC -dumpversion | head -n 1 | sed 's/^[^0-9]* //;s/\..*$//'`
+if ! [[ $fcVers =~ ^[0-9]+$ ]] ; then
+  echo "    un-recognized Compiler-version '$fcVers' ; ignored (-> set to 0)" ; fcVers=0 ;
+else echo "    get Compiler-version: '$fcVers'" ; fi
+if [ $fcVers -ge 10 ] ; then
+  FFLAGS="$FFLAGS -fallow-argument-mismatch"
+fi
+
+# Optimisation / debug
+if test "x$IEEE" = x ; then
+    FFLAGS="$FFLAGS -Wunused -Wuninitialized"
+    FOPTIM='-O3 -ftree-vectorize -funroll-loops'
+    NOOPTFLAGS='-O2 -funroll-loops'
+else
+    FFLAGS="$FFLAGS -Wall"
+    if test "x$DEVEL" = x ; then
+        FOPTIM='-O0'
+    else
+        FOPTIM='-O0 -g -fbounds-check'
+        FOPTIM="$FOPTIM -ffpe-trap=invalid,zero,overflow -finit-real=inf"
+    fi
+fi
+
+# Free-form Fortran flags
+F90FLAGS="$FFLAGS -x f95 -ffree-form"
+F90OPTIM=$FOPTIM
+
+# --------------------------------------------------------------
+# CUSTOM: Disable ANY NetCDF auto-detection / linkage.
+# We are not using pkg/mnc in this experiment; linking netcdf was causing
+# spurious ld errors on macOS when no NetCDF-using packages are enabled.
+# Keep these empty so genmake2 does not inject NetCDF paths or libs.
+INCLUDEDIRS=''
+INCLUDES=''
+LIBS=''
+# --------------------------------------------------------------
+
+# Optional: add MPI include path only when explicitly building with MPI
+if [ -n "$MPI_HOME" -a -z "$MPI_INC_DIR" ]; then
+    MPI_INC_DIR="$MPI_HOME/include"
+fi
+if [ "x$MPI" = xtrue ] ; then
+   if [ -z "$MPI_INC_DIR" ] ; then
+      # Try pkg-config (works for many MPI installs)
+      if [[ -n $( pkg-config --cflags-only-I mpich ) && ($? == 0) ]] ; then
+         MPI_INC_DIR=$(pkg-config --cflags-only-I mpich | awk '{ print $1 }' | sed -e "s/-I//" )
+      else
+         echo MPI_HOME is not set and pkg-config not available, aborting
+         exit 1
+      fi
+   fi
+   INCLUDES+=" -I$MPI_INC_DIR"
+   INCLUDEDIRS+=" $MPI_INC_DIR"
+   MPIINCLUDEDIR="$MPI_INC_DIR"
+fi

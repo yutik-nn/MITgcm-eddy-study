@@ -1,0 +1,8 @@
+#ifndef CPP_OPTIONS_H
+#define CPP_OPTIONS_H
+#define NONLIN_FRSURF
+#define EXACT_CONSERV
+#include "CPP_EEOPTIONS.h"
+#define ALLOW_MDSIO
+#undef  ALLOW_MNC
+#endif

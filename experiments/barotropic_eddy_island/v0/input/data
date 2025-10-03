@@ -1,0 +1,51 @@
+# Model parameters
+
+# Barotropic eddy–island (v0): runtime parameters
+# Every line is commented with the *reason* for the choice so you can learn/modify quickly.
+# data
+&PARM01
+viscAh=2000.,
+viscAr=0.,
+implicitViscosity=.TRUE.,
+tempStepping=.FALSE.,
+saltStepping=.FALSE.,
+eosType='LINEAR',
+rhoConst=1025.,
+f0=1.E-4,
+beta=1.E-11,
+gBaro=9.81,
+rigidLid=.FALSE.,
+implicitFreeSurface=.TRUE.,
+exactConserv=.FALSE.,
+/
+
+&PARM02
+cg2dTargetResidual=1.E-8,
+cg2dMaxIters=2000,
+/
+
+&PARM03
+nIter0=0,
+nTimeSteps=7200,         
+deltaT=10.0,
+dumpFreq=3600.0,         
+monitorFreq=600.0,
+pChkptFreq=0.,
+chkptFreq=0.,
+/
+
+&PARM04
+ usingCartesianGrid=.TRUE.,
+ delX=120*5000.,
+ delY=80*5000.,
+ delR=1000.,
+ xgOrigin=0.,  
+ ygOrigin=-200000.,  
+/
+
+&PARM05
+bathyFile='test_bathy.bin',
+pSurfInitFile='test_eta.bin',
+uVelInitFile='test_u.bin',
+vVelInitFile='test_v.bin',
+/

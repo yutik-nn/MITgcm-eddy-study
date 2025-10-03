@@ -1,0 +1,17 @@
+# experiments/barotropic_eddy_island/v0/input/data.diagnostics
+# Write snapshots (not time-averages) every 6 h
+ &DIAGNOSTICS_LIST
+  diagMdsDir = 'Diags'
+  fields(1:1,1) = 'ETAN    ',
+  fileName(1)   = 'surf',
+  frequency(1)  = -21600.0
+
+  fields(1:2,2) = 'UVEL    ','VVEL    ',
+  fileName(2)   = 'vel',
+  frequency(2)  = -21600.0
+ /
+ &DIAG_STATIS_PARMS
+  stat_fields(1:3,1) = 'ETAN    ','UVEL    ','VVEL    ',
+  stat_fName(1)      = 'daystats',
+  stat_freq(1)       = 86400.0
+ /
